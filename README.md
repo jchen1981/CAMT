@@ -11,6 +11,9 @@ settings in the paper.
 ## Installation         
 
 ```
+# install.packages(c("matrixStats", "ggplot2", "cowplot"))
+# source("https://bioconductor.org/biocLite.R")
+# biocLite("qvalue")
 # install.packages("devtools")
 devtools::install_github("jchen1981/CAMT")
 ```
