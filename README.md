@@ -1,5 +1,5 @@
 # CAMT
-Covariate Adaptive Multiple Testing
+Covariate Adaptive Multiple Testing v1.0
 
 ## Overview
 The CAMT package implements a covariate adaptive multiple testing procedure described in the paper: [Covariate Adaptive False Discovery Rate Control with
@@ -40,3 +40,6 @@ plot.camt(camt.obj, covariate = as.vector(rank(data$pi0.var)), covariate.name = 
 	log = TRUE, file.name = "CovariateModerate")
   
 ```
+
+### Reproducing
+The three folders "Simulation", "RealData" and "Runtime" contain data and scripts for reproducing all the results in the manscript. In the "Simulation" folder, a word document describing various simulation scripts is provided.
