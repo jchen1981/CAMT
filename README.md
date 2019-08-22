@@ -41,5 +41,5 @@ plot.camt(camt.obj, covariate = as.vector(rank(data$pi0.var)), covariate.name = 
   
 ```
 
-### Reproducing
+## Reproducibility
 The three folders "Simulation", "RealData" and "Runtime" contain data and scripts for reproducing all the results in the manscript. In the "Simulation" folder, a word document describing various simulation scripts is provided.
