@@ -5,7 +5,7 @@ Covariate Adaptive Multiple Testing v1.0
 The CAMT package implements a covariate adaptive multiple testing procedure described in the paper: [Covariate Adaptive False Discovery Rate Control with
 Applications to Omics-Wide Multiple Testing](https://arxiv.org/***). CAMT allows both the prior null probability and the alternative distribution to depend on covariates. 
 It is robust to model mis-specification and is computationally efficient. The package also contains functions for testing the
-informativeness of the covariates before using CAMT, and a comprehensive simulation function, which covers all the
+informativeness of the covariates for multiple testing correction, and a comprehensive simulation function, which covers all the
 settings in the paper.
 
 ## Installation         
