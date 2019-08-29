@@ -189,7 +189,7 @@ paras$sig.densities <- c('Low', 'Medium', 'High')
 paras$sig.strengths <- c('L1', 'L2', 'L3', 'L4', 'L5', 'L6')
 paras$null.model <- 'Unif'
 paras$covariate.model <- 'pi0'
-paras$covariate.dist <- 'Uniform'
+paras$covariate.dist <- 'T'
 paras$cor.struct <- 'None'
 paras$cor.nblock <- 500
 paras$cor.rho <- 0

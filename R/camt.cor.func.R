@@ -967,7 +967,8 @@ paras.mapping.func <- function (
 #' @param covariate.strength a character string from \code{'None', 'Moderate', 'Strong'} indicating the covariate strength.
 #' @param covariate.model a character string from \code{'pi0', 'f1', 'both'} indicating whether the prior null proability, 
 #' the alterantive distribution or both are affected by the covariate.
-#' @param covariate.dist a character string from \code{'Normal', 'Uniform'} indicating the distribution of the covariate.
+#' @param covariate.dist a character string from \code{'Normal', 'Uniform', 'T'} indicating the distribution of the covariate.
+#' For t-distribution, a degree of freedom of five is used.
 #' @param null.model a character string from \code{'Unif', 'Left', 'Right'} indicating whether the null distribution of the p-value is uniform, 
 #' left skewed or right skewed.
 #' @param skewness a numeric value indicating the skewness of the p-value distribution under the null (mean of the z-value)
