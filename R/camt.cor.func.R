@@ -1011,7 +1011,7 @@ simulate.data <- function (
 		paras.mapping       = paras.mapping.func(),
 		covariate.strength  = c('None', 'Moderate', 'Strong'),  
 		covariate.model     = c('pi0', 'f1', 'both'),
-		covariate.dist      = c('Normal', 'Uniform'),
+		covariate.dist      = c('Normal', 'Uniform', 'T'),
 		null.model          = c('Unif', 'Left', 'Right'),
 		skewness            = 0.15,
 		f1.sd               = 1.0,
@@ -1065,6 +1065,11 @@ simulate.data <- function (
 	if (covariate.dist == 'Uniform') {
 		x1 <- scale(runif(feature.no))
 		x2 <- scale(runif(feature.no))
+	}
+	
+	if (covariate.dist == 'T') {
+		x1 <- rt(feature.no, df = 5)
+		x2 <- rt(feature.no, df = 5)
 	}
 	
 	eta <- sig.densities[sig.density] + x1 * pi.k
