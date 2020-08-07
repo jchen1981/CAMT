@@ -4,8 +4,14 @@
 \alias{cov.test.c}
 \title{A permutation test for assessing the informativeness of a categorical covariate for CAMT.}
 \usage{
-cov.test.c(pvals, covariate, cutoffs = quantile(pvals, c(0.001, 0.005, 0.01,
-  0.05, 0.1, 0.2)), perm.no = 999, n.max = 1e+05, silence = TRUE)
+cov.test.c(
+  pvals,
+  covariate,
+  cutoffs = quantile(pvals, c(0.001, 0.005, 0.01, 0.05, 0.1, 0.2)),
+  perm.no = 999,
+  n.max = 1e+05,
+  silence = TRUE
+)
 }
 \arguments{
 \item{pvals}{a numeric vector of p-values.}
@@ -14,20 +20,18 @@ cov.test.c(pvals, covariate, cutoffs = quantile(pvals, c(0.001, 0.005, 0.01,
 
 \item{cutoffs}{a numeric vector of the cutoff points for dichotomizing the p-values.}
 
-\item{perm.no}{the number of permutation to assess the significance. Default is 999.}
+\item{perm.no}{the number of permutation to assess the significance. Deafult is 999.}
 
 \item{n.max}{an integer number specifying the maximum number of data points to be included. If the number of data points is larger than \code{n.max}, 
 subsampling will be performed.}
 
 \item{silence}{a logical value indicating whether to print out the process of the computation.}
-
-
 }
 \value{
 A list with the elements
 \item{stat.o}{the observed test statistic.}
 \item{stat.p}{a vector of the test statistic from permutation.}
-\item{p.value}{the omnibus p-value for testing the association.}
+\item{p.value}{the omnibu p-value for testing the association.}
 \item{p.cut.optim}{the optimal cutoff to dichotomize the p-value.}
 }
 \description{
@@ -46,11 +50,10 @@ obj$p.value
 
 }
 \references{
-Leveraging biological and statistical covariates improves the detection power in epigenome-wide association testing. Submitted.
+Huang JY, ..., Zhang X, Chen J (2020) Leveraging biological and statistical covariates improves the detection power in epigenome-wide
+association testing.21(88).
 }
-\author{
-***
-}
-\keyword{association test}
-\keyword{multiple testing}
-
+\keyword{association}
+\keyword{multiple}
+\keyword{test}
+\keyword{testing,}

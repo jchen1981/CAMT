@@ -2,20 +2,31 @@
 % Please edit documentation in R/camt.cor.func.R
 \name{camt.fdr}
 \alias{camt.fdr}
-\title{Covariate-adaptive false discovery rate control}
+\title{Perform covariate-adaptive false discovery rate control}
 \usage{
-camt.fdr(pvals, pi0.var = NULL, f1.var = NULL, data = NULL,
-  pvals.cutoff = 1e-15, pi0.low = 0.1, alg.type = c("EM", "OS"),
-  EM.paras = list(iterlim = 50, k.init = NULL, tol = 1e-05, pi0.init =
-  NULL, nlm.iter = 5), control.method = c("hybrid", "knockoff+"),
-  burnin.no = 500, trace = FALSE, return.model.matrix = TRUE, ...)
+camt.fdr(
+  pvals,
+  pi0.var = NULL,
+  f1.var = NULL,
+  data = NULL,
+  pvals.cutoff = 1e-15,
+  pi0.low = 0.1,
+  alg.type = c("EM", "OS"),
+  EM.paras = list(iterlim = 50, k.init = NULL, tol = 1e-05, pi0.init = NULL, nlm.iter =
+    5),
+  control.method = c("hybrid", "knockoff+"),
+  burnin.no = 500,
+  trace = FALSE,
+  return.model.matrix = TRUE,
+  ...
+)
 }
 \arguments{
 \item{pvals}{a numeric vector of p-values.}
 
-\item{pi0.var}{a formula, a vector, a data frame, or a matrix of covariates for the prior null probability.}
+\item{pi0.var}{a formula, a vector, a data frame, or a matrix of covariate values for the prior null probability.}
 
-\item{f1.var}{a formula, a vector, a data frame, or a matrix of covariates for the alternative distribution.}
+\item{f1.var}{a formula, a vector, a data frame, or a matrix of covariate values for the alternative distribution.}
 
 \item{data}{a data frame containing the covariates, only used when pi0.var, f1.var are classes of 'formula'.}
 
@@ -23,21 +34,20 @@ camt.fdr(pvals, pi0.var = NULL, f1.var = NULL, data = NULL,
 
 \item{pi0.low}{the allowed minimal pi0 value, which could guard against the dominance of the prior.}
 
-\item{alg.type}{a character string indicating the algorithm used. 'OS': direct one-step optimization using a Newton-type algorithm, 
-'EM': using EM algorithm. 'OS' is fast but could be inaccurate under some scenarios. Default 'EM'.}
+\item{alg.type}{a character string indicating the algorithm used. 'OS' - direct one-step optimization using a Newton-type algorithm, 
+'EM' - using EM algorithm. 'OS' is fast but could be inaccurate under some scenarios. Default 'EM'.}
 
-\item{EM.paras}{a list of control arguments for the EM algorithm.
+\item{EM.paras}{a list of control arguments for the EM algorithm
 \itemize{
-\item{iterlim: }{an integer value indicating the maximum number of iterations.}
-\item{tol: }{a numeric value giving the tolerance in the relative change in the log likelihood below which the algorithm is considered to be converged.}
-\item{pi0.init, k.init: }{two scalars giving the initial guess of the average pi0 and k parameter.}
-\item{nlm.iter: }{an integer indicating the allowed maximum iteration in running \code{'nlm'}, used to speed up computation.}
-}
-}
+\item{iterlim}{an integer value indicating the maximum number of iterations.}
+\item{tol}{a numeric value giving the tolerance in the relative change in the log likelihood below which the algorithm is considered to be converged.}
+\item{pi0.init, k.init}{two scalars giving the initial guess of the average pi0 and k parameter.}
+\item{nlm.iter}{an integer indicating the allowed maximum iteration in running \code{'nlm'}, used to speed up computation.}
+}}
 
 \item{control.method}{a character string indicating the FDR control variant. 'knockoff+': the knockoff+ procedure of Barber-Candes (BC), 
-conservative at sparse signal/less informative covariates. 'hybrid': an empirical method to correct the conservativeness of 'knockoff+'. The method is 
-based on taking the maximum over the BC-type (knockoff) and BH-type FDR estimates for a certain number (as specified by \code{burnin.no}) of 
+conservative at sparse signal/small FDR levels. 'hybrid': an empirical method to correct the conservativeness of 'knockoff+'. The method is 
+based on taking the maximum over the BC-type (knockoff) and BH-type FDR estimates for a certain number (as specified by \code{'burnin.no'}) of 
 the most promising hypotheses at the start of the algorithm. The rest use knockoff-based FDR estimator. Default is 'hybrid'.}
 
 \item{burnin.no}{an integer value indicating the number of the most promising hypotheses that will apply the 'hybrid' procedure above.}
@@ -47,7 +57,6 @@ the most promising hypotheses at the start of the algorithm. The rest use knocko
 \item{return.model.matrix}{a logical value indicating whether to return the model matrix.  Consider setting to FALSE if it's huge.}
 
 \item{...}{parameters passing to \code{'nlm'} optimization.}
-
 }
 \value{
 A list with the elements
@@ -69,19 +78,18 @@ It allows both the prior null probability and the alternative distribution to de
 }
 \examples{
 
-data <- simulate.data(feature.no = 5000, covariate.strength = "Moderate", covariate.model = "pi0",
-	sig.density = "Medium", sig.strength = "L3", cor.struct = "None")
-camt.obj <- camt.fdr(pvals = data$pvals, pi0.var = data$pi0.var, f1.var = data$f1.var, 
-	alg.type = "EM", control.method = "knockoff+")
-plot.camt(camt.obj, covariate = as.vector(rank(data$pi0.var)), covariate.name = "Covariate rank",
-	log = TRUE, file.name = "CovariateModerate")
+data <- simulate.data(feature.no = 10000, covariate.strength = 'Moderate', covariate.model = 'pi0',
+	sig.density = 'Medium', sig.strength = 'L3', cor.struct = 'None')
+camt.fdr.obj <- camt.fdr(pvals = data$pvals, pi0.var = data$pi0.var, f1.var = data$f1.var, 
+	alg.type = 'EM', control.method = 'knockoff+')
+plot.camt.fdr(camt.fdr.obj, covariate = as.vector(rank(data$pi0.var)), covariate.name = 'Covariate rank',
+	log = TRUE, file.name = 'CovariateModerate.pdf')
+
 }
 \references{
-Covariate Adaptive False Discovery Rate Control with Applications to Omics-Wide Multiple Testing.
+Xianyang Zhang, Jun Chen. Covariate Adaptive False Discovery Rate Control with Applications to Omics-Wide Multiple Testing. JASA. To appear.
 }
 \author{
-***
+Jun Chen
 }
 \keyword{FDR}
-\keyword{multiple testing}
-

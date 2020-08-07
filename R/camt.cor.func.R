@@ -1,13 +1,5 @@
 
 
-ztransform <- function(pvals, tol = 1E-15) {
-	# Transform p-values to z-scores
-	pvals[pvals <= tol] <- tol
-	pvals[pvals >= 1 - tol] <- 1 - tol
-	z <- -qnorm(pvals)
-	return(z)
-}
-
 process.pvals <- function (pvals) {
 	# Process the pvalues to replace 0 or 1
 	# Right end 
@@ -17,7 +9,7 @@ process.pvals <- function (pvals) {
 	return(pvals)
 }
 
-solvek <- function (pi0, pvals, pvals.cutoff = 1e-15) {
+solvek.fdr <- function (pi0, pvals, pvals.cutoff = 1e-15) {
 	pvals [pvals  <= pvals.cutoff] <- pvals.cutoff
 	pvals [pvals >= 1 - pvals.cutoff] <- 1 - pvals.cutoff
 	
@@ -65,7 +57,7 @@ calculate.weights <- function (pvals, pi0.var = NULL, f1.var = NULL, data = NULL
 #			 return.model.matrix: a logical value indicating whether to return the model matrix. Set FALSE to save memory space.
 #			 ...:  parameters to 'nlm' optimization.
 #		 
-#		 Returns:
+#        Returns:
 #		 a list that contains:
 #			 call:  the call made.
 #			 pi0:   a vector of the estimated null probabilities. 
@@ -95,7 +87,7 @@ calculate.weights <- function (pvals, pi0.var = NULL, f1.var = NULL, data = NULL
 	
 	if (is.null(EM.paras$k.init)) {
 		if (trace) cat('Estimating initial k values ...\n')
-		k.init <- solvek(pi0.est, pvals, pvals.cutoff)
+		k.init <- solvek.fdr(pi0.est, pvals, pvals.cutoff)
 		EM.paras$k.init <- k.init
 	} else {
 		k.init <- EM.paras$k.init
@@ -403,7 +395,7 @@ hybridfdr.full.path <- function (pvals, pi0, k,  control.method=c('hybrid', 'kno
 }
 
 
-#' Covariate-adaptive false discovery rate control
+#' Perform covariate-adaptive false discovery rate control
 #'
 #' The function implements a scalable, flexible, robust and powerful FDR control method for large-scale multiple testing exploiting the auxiliary covariates. 
 #' It allows both the prior null probability and the alternative distribution to depend on covariates.
@@ -417,11 +409,13 @@ hybridfdr.full.path <- function (pvals, pi0, k,  control.method=c('hybrid', 'kno
 #' @param alg.type  a character string indicating the algorithm used. 'OS' - direct one-step optimization using a Newton-type algorithm, 
 #' 'EM' - using EM algorithm. 'OS' is fast but could be inaccurate under some scenarios. Default 'EM'.
 #' @param EM.paras  a list of control arguments for the EM algorithm
+#' \itemize{
 #' \item{iterlim}{an integer value indicating the maximum number of iterations.}
 #' \item{tol}{a numeric value giving the tolerance in the relative change in the log likelihood below which the algorithm is considered to be converged.}
 #' \item{pi0.init, k.init}{two scalars giving the initial guess of the average pi0 and k parameter.}
 #' \item{nlm.iter}{an integer indicating the allowed maximum iteration in running \code{'nlm'}, used to speed up computation.}
-#' @param control.method  a character string indicating the FDR control variant. 'knockoff+': the knockoff+ procedure of Barber-Candes (BC), 
+#' }
+#' @param control.method  a character string indicating the FDR control variant. 'knockoff+': the knockoff+ procedure of Barber-Candes (BC), 
 #' conservative at sparse signal/small FDR levels. 'hybrid': an empirical method to correct the conservativeness of 'knockoff+'. The method is 
 #' based on taking the maximum over the BC-type (knockoff) and BH-type FDR estimates for a certain number (as specified by \code{'burnin.no'}) of 
 #' the most promising hypotheses at the start of the algorithm. The rest use knockoff-based FDR estimator. Default is 'hybrid'.
@@ -443,19 +437,19 @@ hybridfdr.full.path <- function (pvals, pi0, k,  control.method=c('hybrid', 'kno
 #' \item{pvals}{a numeric vector of the original p-values used.}
 #' \item{ts}{a numeric vector of the thresholds (t) below which the corresponding hypothesis will be rejected.}
 #' 
-#' @author ***
-#' @references Covariate Adaptive False Discovery Rate Control with Applications to Omics-Wide Multiple Testing.
-#' @keywords FDR, multiple testing
-#' @importFrom stats binomial dbeta qnorm uniroot nlm
+#' @author Jun Chen
+#' @references Xianyang Zhang, Jun Chen. Covariate Adaptive False Discovery Rate Control with Applications to Omics-Wide Multiple Testing. JASA. To appear.
+#' @keywords FDR
+#' @importFrom stats binomial dbeta qnorm uniroot nlm model.matrix
 #' @importFrom qvalue qvalue
 #' @examples
 #'
 #' data <- simulate.data(feature.no = 10000, covariate.strength = 'Moderate', covariate.model = 'pi0',
 #'		sig.density = 'Medium', sig.strength = 'L3', cor.struct = 'None')
-#' camt.obj <- camt.fdr(pvals = data$pvals, pi0.var = data$pi0.var, f1.var = data$f1.var, 
+#' camt.fdr.obj <- camt.fdr(pvals = data$pvals, pi0.var = data$pi0.var, f1.var = data$f1.var, 
 #'		alg.type = 'EM', control.method = 'knockoff+')
-#' plot.camt(camt.obj, covariate = as.vector(rank(data$pi0.var)), covariate.name = 'Covariate rank',
-#'		log = TRUE, file.name = 'CovariateModerate')
+#' plot.camt.fdr(camt.fdr.obj, covariate = as.vector(rank(data$pi0.var)), covariate.name = 'Covariate rank',
+#'		log = TRUE, file.name = 'CovariateModerate.pdf')
 #' 
 #' @rdname camt.fdr
 #' @export
@@ -492,15 +486,15 @@ camt.fdr <- function (pvals, pi0.var = NULL, f1.var = NULL, data = NULL,
 	
 	
 	if (trace) cat('Estimate pi0 and k ...\n')
-	camt.obj <- calculate.weights(pvals = pvals, pi0.var = pi0.var, f1.var = f1.var, data = data,
+	camt.fdr.obj <- calculate.weights(pvals = pvals, pi0.var = pi0.var, f1.var = f1.var, data = data,
 			pvals.cutoff = pvals.cutoff, alg.type = alg.type, 
 			EM.paras = EM.paras, trace = trace, ...)
 	
 	if (trace) cat('Perform covariate-adaptive FDR control ...\n')
-	fdr.obj <- hybridfdr.full.path(pvals, camt.obj$pi0, camt.obj$k, pi0.low = pi0.low, control.method = control.method, burnin.no = burnin.no)
+	fdr.obj <- hybridfdr.full.path(pvals, camt.fdr.obj$pi0, camt.fdr.obj$k, pi0.low = pi0.low, control.method = control.method, burnin.no = burnin.no)
 	
 	if (trace) cat('Finished!\n')
-	result <- camt.obj
+	result <- camt.fdr.obj
 	result$fdr <- fdr.obj$fdr
 	result$ts <- fdr.obj$ts
 	result$pi0 <- fdr.obj$pi0
@@ -510,6 +504,603 @@ camt.fdr <- function (pvals, pi0.var = NULL, f1.var = NULL, data = NULL,
 }
 
 
+
+#' Plot the camt.fdr results
+#'
+#' The function plots the null probabilities, f1 shape parameters and p-values against covariate values. Significant hypotheses are highlighted in red.
+#'
+#' @param camt.fdr.obj a list returned from running 'camt.fdr'.
+#' @param covariate a vector containing the one-dimensional covariate values.
+#' @param covariate.type a character string of either "continuous" or "categorical".
+#' @param covariate.name a character string for the name of the covariate to be plotted.
+#' @param alpha  a numeric value, the target FDR level.
+#' @param nlimit an integer, the number of insignificant hypotheses to be sampled to reduce the visualization complexity.
+#' @param log a logical value indicating whether the p-values should be plotted on the log scale. 
+#' @param logit a logical value indicating whether the pi0/k should be plotted on the logit scale. 
+#' @param file.name file.name a character string (ended with .pdf) for the name of the generated pdf file. Could include the path. 
+#'
+#' @return A list of \code{'ggplot2'} objects.
+#' 
+#' @author Jun Chen
+#' @references Xianyang Zhang, Jun Chen. Covariate Adaptive False Discovery Rate Control with Applications to Omics-Wide Multiple Testing. JASA. To appear.
+#' @keywords FDR, multiple testing
+#' @import ggplot2
+#' @import grDevices
+#' @importFrom cowplot plot_grid
+#' @examples
+#'
+#' data <- simulate.data(feature.no = 10000, covariate.strength = 'Moderate', covariate.model = 'pi0',
+#'		sig.density = 'Medium', sig.strength = 'L3', cor.struct = 'None')
+#' camt.fdr.obj <- camt.fdr(pvals = data$pvals, pi0.var = data$pi0.var, f1.var = data$f1.var, 
+#'		alg.type = 'EM', control.method = 'knockoff+')
+#' plot.camt.fdr(camt.fdr.obj, covariate = as.vector(rank(data$pi0.var)), covariate.name = 'Covariate rank',
+#'		log = TRUE, file.name = 'CovariateModerate.pdf')
+#' 
+#' @rdname plot.camt.fdr
+#' @export
+
+plot.camt.fdr <- function (camt.fdr.obj,  covariate, covariate.type = c('continuous',  'categorical'), covariate.name = 'covariate', 
+		alpha = 0.1, nlimit = 10000, log = FALSE, logit = TRUE,  file.name = 'CAMT.plot.pdf') {
+	
+	covariate.type <- match.arg(covariate.type)
+	pvals <- camt.fdr.obj$pvals
+	pi0 <- camt.fdr.obj$pi0
+	k <- camt.fdr.obj$k
+	fdr <- camt.fdr.obj$fdr
+	ts <- camt.fdr.obj$ts
+	
+	# remove NA
+	ind <- !is.na(pvals) 
+	pvals <- pvals[ind]
+	pi0 <- pi0[ind]
+	k <- k[ind]
+	fdr <- fdr[ind]
+	covariate <- covariate[ind]
+	ts <- ts[ind]
+	
+	n <- length(pvals)
+	
+	rejection <- fdr <= alpha
+	cat(paste0('CAMT identified ', sum(rejection), ' at an FDR of ', alpha, '.\n'))
+	
+	ind1 <- which(rejection)
+	ind2 <- setdiff(1:n, ind1)
+	
+	if (length(ind2) > nlimit) {
+		ind2 <- sample(ind2, nlimit)
+	}
+	
+	ind <- c(ind1, ind2)
+	rejection <- factor(c(rep(1, length(ind1)), rep(0, length(ind2))))
+	
+	pvals <- pvals[ind]
+	pi0 <- pi0[ind]
+	k <- k[ind]
+	fdr <- fdr[ind]
+	covariate <- covariate[ind]
+	ts <- ts[ind]
+	
+	lfdr <- (pi0 /  (pi0 + (1 - pi0) * dbeta(pvals, shape1 = 1 - k, shape2 = 1)))
+	
+	pi0[pi0 == 0] <- min(pi0[pi0 != 0])
+	pi0[pi0 == 1] <- max(pi0[pi0 != 1])
+	
+	if (log == TRUE) {
+		pvals <- -log10(pvals)
+		ylab.pval <- '-log10(p-value)'
+	} else {
+		ylab.pval <- 'p-value'
+	}
+	
+	if (logit == TRUE) {
+		pi0 <- log(pi0 / (1 - pi0))
+		k <- log(k / (1 - k))
+		ylab.pi0 <- 'logit(pi0)'
+		ylab.k <- 'logit(k)'
+	} else {
+		ylab.pi0 <- 'pi0'
+		ylab.k <- 'k'
+	}
+	
+	data <- data.frame(pi0 = pi0, k = k, fdr = fdr, lfdr = lfdr, rejection = rejection, covariate = covariate, pvals = pvals)
+	data <- data[rev(order(data$fdr)), ]
+	
+	plot.list <- list()
+	if (covariate.type == 'continuous') {
+		data1 <- subset(data, rejection == '0')
+		data2 <- subset(data, rejection == '1')
+		plot.list[['pi0']] <- ggplot(data, aes(x = covariate, y = pi0, col = rejection)) + 
+				geom_point(aes(x = covariate, y = pi0), data = data1, col = 'darkgray', alpha = 0.75, size = 0.25) +
+				geom_point(aes(x = covariate, y = pi0), data = data2, col = 'red', alpha = 0.75, size = 0.25) +
+				ylab(ylab.pi0) +
+				xlab(covariate.name) +
+				scale_colour_manual(values = c('darkgray', 'red')) +
+				ggtitle('Null probability vs covariate') +
+				theme_bw()
+		
+		plot.list[['k']] <- ggplot(data, aes(x = covariate, y = k, col = rejection)) + 
+				geom_point(alpha = 0.75, size = 0.25) +
+				#	geom_smooth(aes(x = covariate, y = k), method = 'lm', inherit.aes = FALSE, size = 0.25) +
+				ylab(ylab.k) +
+				ggtitle('f1 shape parameter vs covariate') +
+				scale_colour_manual(values = c('darkgray', 'red')) +
+				xlab(covariate.name) +
+				theme_bw()
+		
+		
+		plot.list[['pval']] <- ggplot(data, aes(x = covariate, y = pvals, col = rejection)) + 
+				geom_point(alpha = 0.75, size = 0.2) +
+				#	geom_area(aes(x = covariate, y = pvals.c), col = 'red', alpha = 0.25, size = 0.25) +
+				ylab(ylab.pval) +
+				ggtitle(paste0('Target FDR level (alpha = ', alpha, ')')) +
+				scale_colour_manual(values = c('darkgray', 'red')) +
+				xlab(covariate.name) +
+				theme_bw()
+		
+		plot.list[['lfdr']] <- ggplot(data, aes(x = covariate, y = pvals, col = lfdr)) + 
+				geom_point(alpha = 0.75, size = 0.2) +
+				ylab(ylab.pval) +
+				ggtitle('Estimated local FDR') +
+				xlab(covariate.name) +
+				scale_color_gradient(low="red", high="darkgray") +
+				theme_bw()
+	}
+	
+	if (covariate.type == 'categorical') {
+		plot.list[['pi0']] <- ggplot(data, aes(x = covariate, y = pi0, col = rejection)) + 
+				geom_boxplot(alpha = 0.75) +
+				#	geom_smooth(aes(x = covariate, y = pi0), method = 'lm', inherit.aes = FALSE, size = 0.25) +
+				ylab(ylab.pi0) +
+				xlab(covariate.name) +
+				scale_colour_manual(values = c('darkgray', 'red')) +
+				ggtitle('Null probability vs covariate') +
+				theme_bw()
+		
+		plot.list[['k']] <- ggplot(data, aes(x = covariate, y = k, col = rejection)) + 
+				geom_boxplot(alpha = 0.75) +
+				#	geom_smooth(aes(x = covariate, y = k), method = 'lm', inherit.aes = FALSE, size = 0.25) +
+				ylab(ylab.k) +
+				scale_colour_manual(values = c('darkgray', 'red')) +
+				ggtitle('f1 shape parameter vs covariate') +
+				xlab(covariate.name) +
+				theme_bw()
+		
+		
+		plot.list[['pval']] <- ggplot(data, aes(x = covariate, y = pvals, col = rejection)) + 
+				#	geom_boxplot() +
+				geom_jitter(alpha = 0.75, size = 0.2, position=position_jitter(height=0)) +
+				#	geom_area(aes(x = covariate, y = pvals.c), col = 'red', alpha = 0.25, size = 0.25) +
+				ylab(ylab.pval) +
+				ggtitle(paste0('Target FDR level (alpha = ', alpha, ')')) +
+				scale_colour_manual(values = c('darkgray', 'red')) +
+				xlab(covariate.name) +
+				theme_bw()
+		
+		plot.list[['lfdr']] <- ggplot(data, aes(x = covariate, y = pvals, col = lfdr)) + 
+				#	geom_boxplot() +
+				geom_jitter(alpha = 0.75, size = 0.2, position=position_jitter(height=0)) +
+				ylab(ylab.pval) +
+				ggtitle('Estimated local FDR') +
+				xlab(covariate.name) +
+				scale_color_gradient(low="red", high="darkgray") +
+				theme_bw()
+	}
+	cat('Generate combined PDF plot ...\n')
+	pdf(paste0(file.name, '.pdf'), width =10, height = 6)
+	obj <- plot_grid(plot.list[['pi0']], plot.list[['k']], plot.list[['pval']], plot.list[['lfdr']], ncol=2)
+	print(obj)
+	dev.off()
+	
+	cat('Finished!\n')
+	return(invisible(plot.list))
+}
+
+############################################################################################################
+# FWER procedure
+solvek.fwer <- function(pvals, pi0, init = 0.25, nlm.iter = 10, pvals.cutoff = 1e-15) {
+	pvals [pvals  <= pvals.cutoff] <- pvals.cutoff
+	pvals [pvals >= 1 - pvals.cutoff] <- 1 - pvals.cutoff
+	fun <- function(k) {
+		- sum(log(pi0 + (1 - pi0) * k * pvals ^ (k - 1))) 
+	}
+	
+	err <- try(k <- nlminb(init, fun, control = list(iter.max = nlm.iter), 
+					lower = 0, upper = 1)$par, silent = TRUE)
+	if (class(err) == 'try-error') {
+		k <- 0.25
+	} 
+	return(k)
+}
+
+#' Return the rejected hypotheses at a given significance level.
+#'
+#' The function outputs the indices of the rejected hypotheses at a specified signficance level.
+#'
+#' @param camt.fwer.obj the output from running \code{'camt.fwer'}.
+#' @param alpha a numeric value for the desired signficance level.
+#'
+#' @return A vector containing the indices of the rejected hypotheses.
+#' 
+#' @author Huijuan Zhou
+#' @references Huijuan Zhou, Xianyang Zhang, Jun Chen. Covariate Adaptive Family-wise Error Control with Applications to Genome-wide Association Studies. Submitted.
+#' @keywords FWER, multiple testing
+#' @examples
+#'
+#' data <- simulate.data(feature.no = 10000, covariate.strength = 'Moderate', covariate.model = 'pi0',
+#'		sig.density = 'Medium', sig.strength = 'L4', cor.struct = 'None')
+#' camt.obj.fwer <- camt.fwer(pvals = data$pvals, pi0.var = data$pi0.var)
+#' camt.fwer.rejection(camt.obj.fwer, alpha = 0.1)
+#' 
+#' @rdname camt.fwer.rejection
+#' @export
+camt.fwer.rejection <- function (camt.fwer.obj, alpha = 0.1) {
+	
+	pvals <- camt.fwer.obj$pvals
+	pi0 <- camt.fwer.obj$pi0
+	gamma <- camt.fwer.obj$gamma
+	k <- camt.fwer.obj$k
+	Y <- (pvals > gamma)
+	
+	pi1 <- 1 - pi0
+	tau <- k * (alpha * (1 - gamma)) ^ (k - 1) * (sum(Y * (pi1 / pi0) ^ (1 / (1 - k)))) ^ (1 - k)
+	t <- (pi1 * k / (pi0 * tau)) ^ (1 / (1 - k))
+	rej <- which(pvals < pmin(t, gamma))
+	return(rej)
+}
+
+#' Perform the covariate-adaptive family-wise error rate control
+#'
+#' The function implements a scalable, flexible, robust and powerful FWER control method for large-scale multiple testing exploiting the auxiliary covariates. 
+#' It allows both the prior null probability to depend on covariates.
+#'
+#' @param pvals a numeric vector of p-values.
+#' @param pi0.var a formula, a vector, a data frame, or a matrix of covariate values for the prior null probability.
+#' @param data  a data frame containing the covariates, only used when pi0.var are classes of 'formula'.
+#' @param pvals.cutoff a numeric value to replace p-values below that value, which is used to increase the stability of the algorithm. 
+#' @param alpha a numeric value for the significance level. Default is 0.1.
+#' @param k.fix a numeric value between 0 and 1. It is the k parameter of the alternative (beta) distribution.
+#' If it is null, it will be estimated via EM.
+#' @param EM.paras  a list of control arguments for the EM algorithm
+#' \itemize{
+#' \item{iterlim}{an integer value indicating the maximum number of iterations.}
+#' \item{tol}{a numeric value giving the tolerance in the relative change in the log likelihood below which the algorithm is considered to be converged.}
+#' \item{pi0.init, k.init}{two scalars giving the initial guess of the  pi0 and k parameter.}
+#' \item{nlm.iter}{an integer indicating the allowed maximum iteration in running \code{'nlm'}, used to speed up computation.}
+#' }
+#' @param trace a logical value indicating whether to print the process.
+#' @param return.model.matrix a logical value indicating whether to return the model matrix.  Consider setting to FALSE if it's huge.
+#'
+#' @return A list with the elements
+#' \item{call}{the call made.}
+#' \item{pi0}{a vector of the estimated null probabilities.}
+#' \item{k}{the (estimated) value for the k parameter of the alternative distribution.}
+#' \item{pi0.coef}{a vector of the coefficients for pi0.}
+#' \item{gamma}{the estimated gamma value to dichotomize the p-values}
+#' \item{loglik}{log likelihood.}
+#' \item{EM.paras}{actually used parameters in EM algorithm.}
+#' \item{EM.iter}{the number of iteration actually used.}
+#' \item{rejection}{a vector containing the indices of the rejected hypotheses.}
+#' 
+#' @author Huijuan Zhou
+#' @references Huijuan Zhou, Xianyang Zhang, Jun Chen. Covariate Adaptive Family-wise Error Control with Applications to Genome-wide Association Studies. Submitted.
+#' @keywords FWER
+#' @importFrom stats binomial dbeta qnorm uniroot nlm nlminb
+#' @importFrom qvalue qvalue
+#' @examples
+#'
+#' data <- simulate.data(feature.no = 10000, covariate.strength = 'Moderate', covariate.model = 'pi0',
+#'		sig.density = 'Medium', sig.strength = 'L4', cor.struct = 'None')
+#' camt.obj.fwer <- camt.fwer(pvals = data$pvals, pi0.var = data$pi0.var)
+#' plot.camt.fwer(camt.obj.fwer, covariate = as.vector(rank(data$pi0.var)), covariate.name = 'Covariate rank',
+#'		log = TRUE, file.name = 'CovariateModerate.pdf')
+#' 
+#' @rdname camt.fwer
+#' @export
+
+camt.fwer <- function(pvals, pi0.var, data = data, pvals.cutoff = 1e-15, alpha = 0.1, k.fix = NULL,
+		EM.paras = list(iterlim = 50, tol = 1e-5, k.init = NULL, 
+				pi0.init = NULL, nlm.iter = 5), trace = FALSE, return.model.matrix = FALSE) {
+	
+	m0 <- length(pvals)
+	nan.ind <- !is.na(pvals)
+	pvals <- pvals[nan.ind]
+	m <- length(pvals)
+	
+	pvals[pvals == 1] <- seq(max(pvals[pvals != 1]), 1, 
+			length.out = sum(pvals == 1) + 2)[2 : (sum(pvals == 1) + 1)]
+	pvals[pvals == 0] <- min(pvals[pvals != 0])
+	qvals <- qvalue(pvals, pi0.method = "bootstrap")
+	gamma <- qvals$lambda[which.min(abs(qvals$pi0.lambda - qvals$pi0))]
+	Y <- (pvals > gamma)
+	b0 <- (1 - gamma) * Y + gamma * (1 - Y)
+	
+	# Initialize pi0
+	if (is.null(EM.paras$pi0.init)) {
+		if (trace) cat('Estimating initial pi0 values ...\n')
+		pi0.init <- qvals$pi0
+		if (pi0.init >= 0.99)  pi0.init <- 0.99
+		EM.paras$pi0.init <- pi0.init
+	} else {
+		pi0.init <- EM.paras$pi0.init
+	}
+	
+	# Initialize k
+	if (is.null(EM.paras$k.init)) {
+		if (trace) cat('Estimating initial k values ...\n')
+		k.init <- solvek.fwer(pvals, pi0.init, pvals.cutoff = pvals.cutoff)
+		EM.paras$k.init <- k.init
+	} else {
+		k.init <- EM.paras$k.init
+	}
+	
+	if (is.null(EM.paras$iterlim)) {
+		iterlim <- 50
+		EM.paras$iterlim <- iterlim
+	} else {
+		iterlim <- EM.paras$iterlim
+	}
+	
+	if (is.null(EM.paras$nlm.iter)) {
+		nlm.iter <- 5
+		EM.paras$nlm.iter <- nlm.iter
+	} else {
+		nlm.iter <- EM.paras$nlm.iter
+	}
+	
+	if (is.null(EM.paras$tol)) {
+		tol <- 1e-5
+		EM.paras$tol <- tol
+	} else {
+		tol <- EM.paras$tol
+	}
+	
+	if (is.null(pi0.var)) {
+		pi0.var <- matrix(rep(1, m))
+	} else {
+		if (length(intersect(class(pi0.var), c('matrix', 'numeric', 'character', 'factor', 'data.frame', 'formula'))) == 0) {
+			stop('Currently do not support the class of pi0.var!\n')
+		}
+		if (length(intersect('matrix', class(pi0.var))) != 0) {
+			if (mode(pi0.var) == 'numeric') {
+				if (sum(pi0.var[, 1] == 1) == m0) {
+					pi0.var <- pi0.var
+				} else {
+					pi0.var <- cbind(rep(1, m0), pi0.var)
+				}
+				
+			} else {
+				warning('The "pi0.var" matrix contains non-numeric values! Will treat it as a data frame!\n')
+				pi0.var <- model.matrix(~., data.frame(pi0.var))
+			}
+		} else {
+			if (length(intersect(c('character', 'factor'), class(pi0.var))) != 0 ) {
+				pi0.var <- model.matrix(~., data.frame(pi0.var))
+			}  else {
+				if (length(intersect(c('data.frame'), class(pi0.var))) != 0) {
+					pi0.var <- model.matrix(~., pi0.var)
+				}  else {
+					if (length(intersect('numeric', class(pi0.var))) != 0) {
+						pi0.var <- cbind(rep(1, m0), pi0.var)
+						
+					} else {
+						if (length(intersect(c('formula'), class(pi0.var))) != 0) {
+							if (is.null(data)) {
+								stop('"pi0.var" is a formula and "data" should be a data frame!\n')
+							} else {
+								pi0.var <- model.matrix(pi0.var, data)
+							}
+							
+						}
+					}
+				}
+			}
+		}
+		
+		pi0.var <- pi0.var[nan.ind, , drop = FALSE]
+	}
+	
+	# Threshold the p-value for more robustness
+	pvals[pvals <= pvals.cutoff] <- pvals.cutoff
+	pvals[pvals >= 1 - pvals.cutoff] <- 1 - pvals.cutoff
+	
+	len.theta <- ncol(pi0.var)
+	theta <- c(binomial()$linkfun(pi0.init), rep(0, len.theta - 1))
+	
+	if (is.null(k.fix)) {
+		k <- k.init
+	} else {
+		k <- k.fix
+	}
+	
+	fun1 <- function(theta, q0) {
+		q1 <- 1 - q0
+		exp.eta.theta <- exp(as.vector(pi0.var %*% theta))
+		pi0 <- exp.eta.theta / (1 + exp.eta.theta)
+		- sum(q0 * log(pi0) + q1 * log(1 - pi0))
+	}
+	fun2 <- function(k, q0) {
+		q1 <- 1 - q0  
+		gammak <- gamma ^ k
+		- sum(q1 * (Y * log(1 - gammak) + k * (1 - Y) * log(gamma)))
+	}
+	
+	iter <- 1
+	loglik1 <- 1
+	
+	if (trace) cat('Run EM algorithm...\n')
+	while (iter <= iterlim) {
+		if (trace) cat('.')
+		# E step
+		exp.eta.theta <- exp(as.vector(pi0.var %*% theta))
+		pi0 <- exp.eta.theta / (1 + exp.eta.theta)
+		
+		gammak <- gamma ^ k
+		b1 <- (1 - gammak) * Y + gammak * (1 - Y)
+		pi0b0 <- pi0 * b0
+		pib <- pi0b0 + (1 - pi0) * b1
+		q0 <- pi0b0 / pib
+		
+		loglik2 <- sum(log(pib))
+		
+		if ((abs((loglik2 - loglik1) / loglik1) < tol) | (iter >= iterlim)) {
+			break
+		} else {
+			theta <- suppressWarnings(nlm(fun1, theta, q0 = q0, iterlim = nlm.iter))$estimate
+			if (is.null(k.fix)) {
+				k <- suppressWarnings(nlminb(k, fun2, q0 = q0, control = list(iter.max = nlm.iter), 
+								lower = 0, upper = 1))$par
+			}
+		}
+		loglik1 <- loglik2
+		iter <- iter + 1
+	}
+	
+	if (iter == iterlim) warning('Maximum number of iterations reached!')
+	
+	temp <- rep(NA, m)
+	temp[nan.ind] <- pi0
+	pi0 <- temp
+	
+	camt.fwer.obj <- list(call = match.call(), pvals = pvals, pi0.var = pi0.var, alpha = alpha,
+			pi0 = pi0, k = k, pi0.coef = theta, gamma = gamma,
+			loglik = loglik2, EM.paras = EM.paras, EM.iter = iter) 
+	
+	camt.fwer.obj$rejection <- camt.fwer.rejection(camt.fwer.obj, alpha)
+	
+	if (return.model.matrix) {
+		camt.fwer.obj$pi0.var <- camt.fwer.obj$pi0.var
+	}
+	
+	return(camt.fwer.obj)
+}
+
+
+#' Plot the camt.fwer results
+#'
+#' The function plots the null probabilities and p-values against covariate values. Significant hypotheses are highlighted in red.
+#'
+#' @param camt.fwer.obj a list returned from running 'camt.fwer'.
+#' @param covariate a vector containing the one-dimensional covariate values.
+#' @param covariate.type a character string of either "continuous" or "categorical". 
+#' @param covariate.name a character string for the name of the covariate to be plotted.
+#' @param alpha  a numeric value, the target FWER level.
+#' @param nlimit an integer, the number of insignificant hypotheses to be sampled to reduce the visualization complexity.
+#' @param log a logical value indicating whether the p-values should be plotted on the log scale. 
+#' @param logit a logical value indicating whether the pi0 should be plotted on the logit scale. 
+#' @param file.name a character string (ended with .pdf) for the name of the generated pdf file. Could include the path. 
+#'
+#' @return A list of \code{'ggplot2'} objects.
+#' 
+#' @author Huijuan Zhou
+#' @references Huijuan Zhou, Xianyang Zhang, Jun Chen. Covariate Adaptive Family-wise Error Control with Applications to Genome-wide Association Studies. Submitted.
+#' @keywords FWER, multiple testing
+#' @import ggplot2
+#' @import grDevices
+#' @importFrom cowplot plot_grid
+#' @examples
+#'
+#' data <- simulate.data(feature.no = 10000, covariate.strength = 'Moderate', covariate.model = 'pi0',
+#'		sig.density = 'Medium', sig.strength = 'L4', cor.struct = 'None')
+#' camt.obj.fwer <- camt.fwer(pvals = data$pvals, pi0.var = data$pi0.var)
+#' plot.camt.fwer(camt.obj.fwer, covariate = as.vector(rank(data$pi0.var)), covariate.name = 'Covariate rank',
+#'		log = TRUE, file.name = 'CovariateModerate.pdf')
+#' 
+#' @rdname plot.camt.fwer
+#' @export
+plot.camt.fwer <- function(camt.fwer.obj, covariate, covariate.type = c('continuous',  'categorical'), covariate.name = 'covariate',
+		alpha = 0.1, nlimit = 10000, log = FALSE, logit = TRUE, file.name = 'CAMT.fwer.plot') {
+	
+	pvals <- camt.fwer.obj$pvals
+	pi0.var <- covariate
+#  alpha <- camt.fwer.obj$alpha
+	
+	pi0 <- camt.fwer.obj$pi0
+	
+#  rejection <- camt.fwer.obj$rejection
+	rejection <- camt.fwer.rejection(camt.fwer.obj, alpha)
+	
+	m <- length(pvals)
+	ind1 <- rejection
+	ind2 <- setdiff(1 : m, ind1)
+	
+	if (length(ind2) > nlimit) {
+		ind2 <- sample(ind2, nlimit)
+	}
+	
+	ind <- c(ind1, ind2)
+	pvals <- pvals[ind]
+	pi0.var <- pi0.var[ind]
+	pi0 <- pi0[ind]
+	rejection <- factor(c(rep(1, length(ind1)), rep(0, length(ind2))))
+	
+	if (log == TRUE) {
+		pvals <- -log10(pvals)
+		ylab.pval <- '-log10(p-value)'
+	} else {
+		ylab.pval <- 'p-value'
+	}
+	
+	if (logit == TRUE) {
+		pi0 <- log(pi0 / (1 - pi0))
+		ylab.pi0 <- 'logit(pi0)'
+	} else {
+		ylab.pi0 <- 'pi0'
+	}
+	
+	data <- data.frame(pi0 = pi0, rejection = rejection, pvals = pvals, pi0.var = pi0.var)
+	
+	plot.list <- list()
+	if (covariate.type == 'continuous') {
+		data1 <- subset(data, rejection == '0')
+		data2 <- subset(data, rejection == '1')
+		plot.list[['pi0']] <- ggplot(data, aes(x = pi0.var, y = pi0, col = rejection)) + 
+				geom_point(aes(x = pi0.var, y = pi0), data = data1, col = 'darkgray', alpha = 0.75, size = 0.25) +
+				geom_point(aes(x = pi0.var, y = pi0), data = data2, col = 'red', alpha = 0.75, size = 0.25) +
+				xlab(covariate.name) +
+				ylab(ylab.pi0) +
+				scale_colour_manual(values = c('darkgray', 'red')) +
+				ggtitle('Null probability vs covariate') +
+				theme_bw()
+		
+		plot.list[['pval']] <- ggplot(data, aes(x = pi0.var, y = pvals, col = rejection)) + 
+				geom_point(alpha = 0.75, size = 0.2) +
+				xlab(covariate.name) +
+				ylab(ylab.pval) +
+				ggtitle(paste0('Target FWER level (alpha = ', alpha, ')')) +
+				scale_colour_manual(values = c('darkgray', 'red')) +
+				theme_bw()
+	} else if (covariate.type== 'categorical') {
+		plot.list[['pi0']] <- ggplot(data, aes(x = pi0.var, y = pi0, col = rejection)) + 
+				geom_boxplot(alpha = 0.75) +
+				xlab(covariate.name) +
+				ylab(ylab.pi0) +
+				scale_colour_manual(values = c('darkgray', 'red')) +
+				ggtitle('Null probability vs covariate') +
+				theme_bw()
+		
+		plot.list[['pval']] <- ggplot(data, aes(x = pi0.var, y = pvals, col = rejection)) + 
+				geom_jitter(alpha = 0.75, size = 0.2, position = position_jitter(height = 0)) +
+				xlab(covariate.name) +
+				ylab(ylab.pval) +
+				ggtitle(paste0('Target FWER level (alpha = ', alpha, ')')) +
+				scale_colour_manual(values = c('darkgray', 'red')) +
+				theme_bw()
+	}
+	
+	obj <- plot_grid(plot.list[['pi0']], plot.list[['pval']], ncol = 2)
+	
+	cat('Generate combined PDF plot ...\n')
+	pdf(paste0(file.name), width =10, height = 4)
+	obj <- plot_grid(plot.list[['pi0']], plot.list[['pval']],  ncol=2)
+	print(obj)
+	dev.off()
+	
+	cat('Finished!\n')
+	return(invisible(plot.list))
+	
+}
+############################################################################################################
+# Testing the informativeness of the covariate
 # Copied from "DescTools" package to reduce dependency 
 cochran.armitage.test <- function (x, alternative = c("two.sided", "increasing", "decreasing")) {
 	DNAME <- deparse(substitute(x))
@@ -565,15 +1156,20 @@ cochran.armitage.test <- function (x, alternative = c("two.sided", "increasing",
 #' \item{p.cut.optim}{the optimal cutoff to dichotomize the p-value.}
 
 #' 
-#' @author ***
-#' @references Leveraging biological and statistical covariates improves the detection power in epigenome-wide association testing.Submitted.
+#' @author Jun Chen
+#' @references Huang JY, ..., Zhang X, Chen J (2020) Leveraging biological and statistical covariates improves the detection power in epigenome-wide
+#' association testing.21(88).
 #' @keywords multiple testing, association test
+#' @importFrom matrixStats rowMaxs colMaxs
+#' @importFrom stats dgamma rgamma runif chisq.test quantile qchisq pchisq median rt
 #' @examples
 #'
 #' data <- simulate.data(feature.no = 1000, covariate.strength = 'Moderate', covariate.model = 'pi0',
 #'		sig.density = 'Low', sig.strength = 'L3', cor.struct = 'None')
 #' obj <- suppressWarnings(cov.test.n(data$pvals, data$pi0.var, perm.no = 2))
 #' obj$p.value
+#' 
+
 #' 
 #' @rdname cov.test.n
 #' @export
@@ -671,9 +1267,10 @@ cov.test.n <- function (pvals, covariate, cutoffs = quantile(pvals, c(0.001, 0.0
 #' \item{p.cut.optim}{the optimal cutoff to dichotomize the p-value.}
 
 #' 
-#' @author ***
-#' @references Leveraging biological and statistical covariates improves the detection power in epigenome-wide association testing. Submitted.
+#' @references Huang JY, ..., Zhang X, Chen J (2020) Leveraging biological and statistical covariates improves the detection power in epigenome-wide
+#' association testing.21(88).
 #' @keywords multiple testing, association test
+#' @importFrom stats dgamma rgamma runif chisq.test quantile qchisq pchisq median rt
 #' @examples
 #'
 #' data <- simulate.data(feature.no = 1000, covariate.strength = 'Moderate', covariate.model = 'pi0',
@@ -684,8 +1281,6 @@ cov.test.n <- function (pvals, covariate, cutoffs = quantile(pvals, c(0.001, 0.0
 #' 
 #' @rdname cov.test.c
 #' @export
-
-
 
 cov.test.c <- function (pvals, covariate, cutoffs = quantile(pvals, c(0.001, 0.005, 0.01, 0.05, 0.1, 0.2)), 
 		perm.no = 999, n.max = 100000, silence = TRUE) {
@@ -729,197 +1324,8 @@ cov.test.c <- function (pvals, covariate, cutoffs = quantile(pvals, c(0.001, 0.0
 	p.value <- mean(c(stat.p, stat.o) >= stat.o)
 	return(list(stat.o = stat.o, stat.p = stat.p, p.value = p.value, p.cut.optim = p.cut.optim))
 }
-
-
-#' Plot the CAMT results
-#'
-#' The function plots the null probabilities, f1 shape parameters and p-values against covariate values. Significant hypotheses are highlighted in red.
-#'
-#' @param camt.obj a list returned from running 'camt'.
-#' @param covariate a vector containing the one-dimensional covariate values.
-#' @param covariate.type a character string of either "continuous" or "categorical". 
-#' @param alpha  a numeric value, the target FDR level.
-#' @param nlimit an integer, the number of insignificant hypotheses to be sampled to reduce the visualization complexity.
-#' @param log a logical value indicating whether the p-values should be plotted on the log scale. 
-#' @param logit a logical value indicating whether the pi0/k should be plotted on the logit scale. 
-#' @param file.name a character string for the name of the generated pdf file.
-#' 'EM' - using EM algorithm. 'OS' is fast but could be inaccurate under some scenarios. Default 'EM'.
-#'
-#' @return A list of \code{'ggplot2'} objects.
-#' 
-#' @author ***
-#' @references Covariate Adaptive False Discovery Rate Control with Applications to Omics-Wide Multiple Testing.
-#' @keywords FDR, multiple testing
-#' @importFrom ggplot2 ggplot
-#' @importFrom cowplot plot_grid
-#' @examples
-#'
-#' data <- simulate.data(feature.no = 10000, covariate.strength = 'Moderate', covariate.model = 'pi0',
-#'		sig.density = 'Medium', sig.strength = 'L3', cor.struct = 'None')
-#' camt.obj <- camt.fdr(pvals = data$pvals, pi0.var = data$pi0.var, f1.var = data$f1.var, 
-#'		alg.type = 'EM', control.method = 'knockoff+')
-#' plot.camt(camt.obj, covariate = as.vector(rank(data$pi0.var)), covariate.name = 'Covariate rank',
-#'		log = TRUE, file.name = 'CovariateModerate')
-#' 
-#' @rdname plot.camt
-#' @export
-
-plot.camt <- function (camt.obj,  covariate, covariate.type = c('continuous',  'categorical'), covariate.name = 'covariate', 
-		alpha = 0.1, nlimit = 10000, log = FALSE, logit = TRUE,  file.name = 'CAMT.plot') {
-	
-	covariate.type <- match.arg(covariate.type)
-	pvals <- camt.obj$pvals
-	pi0 <- camt.obj$pi0
-	k <- camt.obj$k
-	fdr <- camt.obj$fdr
-	ts <- camt.obj$ts
-	
-	# remove NA
-	ind <- !is.na(pvals) 
-	pvals <- pvals[ind]
-	pi0 <- pi0[ind]
-	k <- k[ind]
-	fdr <- fdr[ind]
-	covariate <- covariate[ind]
-	ts <- ts[ind]
-	
-	n <- length(pvals)
-	
-	rejection <- fdr <= alpha
-	cat(paste0('CAMT identified ', sum(rejection), ' at an FDR of ', alpha, '.\n'))
-	
-	ind1 <- which(rejection)
-	ind2 <- setdiff(1:n, ind1)
-	
-	if (length(ind2) > nlimit) {
-		ind2 <- sample(ind2, nlimit)
-	}
-	
-	ind <- c(ind1, ind2)
-	rejection <- factor(c(rep(1, length(ind1)), rep(0, length(ind2))))
-	
-	pvals <- pvals[ind]
-	pi0 <- pi0[ind]
-	k <- k[ind]
-	fdr <- fdr[ind]
-	covariate <- covariate[ind]
-	ts <- ts[ind]
-	
-	lfdr <- (pi0 /  (pi0 + (1 - pi0) * dbeta(pvals, shape1 = 1 - k, shape2 = 1)))
-	
-	pi0[pi0 == 0] <- min(pi0[pi0 != 0])
-	pi0[pi0 == 1] <- max(pi0[pi0 != 1])
-	
-	if (log == TRUE) {
-		pvals <- -log10(pvals)
-		ylab.pval <- '-log10(p-value)'
-	} else {
-		ylab.pval <- 'p-value'
-	}
-	
-	if (logit == TRUE) {
-		pi0 <- log(pi0 / (1 - pi0))
-		k <- log(k / (1 - k))
-		ylab.pi0 <- 'logit(pi0)'
-		ylab.k <- 'logit(k)'
-	} else {
-		ylab.pi0 <- 'pi0'
-		ylab.k <- 'k'
-	}
-	
-	data <- data.frame(pi0 = pi0, k = k, fdr = fdr, lfdr = lfdr, rejection = rejection, covariate = covariate, pvals = pvals)
-	data <- data[rev(order(data$fdr)), ]
-	
-	plot.list <- list()
-	if (covariate.type == 'continuous') {
-		plot.list[['pi0']] <- ggplot(data, aes(x = covariate, y = pi0, col = rejection)) + 
-				geom_point(alpha = 0.75, size = 0.25) +
-				#	geom_smooth(aes(x = covariate, y = pi0), method = 'lm', inherit.aes = FALSE, size = 0.25) +
-				ylab(ylab.pi0) +
-				xlab(covariate.name) +
-				scale_colour_manual(values = c('darkgray', 'red')) +
-				ggtitle('Null probability vs covariate') +
-				theme_bw()
-		
-		plot.list[['k']] <- ggplot(data, aes(x = covariate, y = k, col = rejection)) + 
-				geom_point(alpha = 0.75, size = 0.25) +
-				#	geom_smooth(aes(x = covariate, y = k), method = 'lm', inherit.aes = FALSE, size = 0.25) +
-				ylab(ylab.k) +
-				ggtitle('f1 shape parameter vs covariate') +
-				scale_colour_manual(values = c('darkgray', 'red')) +
-				xlab(covariate.name) +
-				theme_bw()
-		
-		
-		plot.list[['pval']] <- ggplot(data, aes(x = covariate, y = pvals, col = rejection)) + 
-				geom_point(alpha = 0.75, size = 0.2) +
-				#	geom_area(aes(x = covariate, y = pvals.c), col = 'red', alpha = 0.25, size = 0.25) +
-				ylab(ylab.pval) +
-				ggtitle(paste0('Target FDR level (alpha = ', alpha, ')')) +
-				scale_colour_manual(values = c('darkgray', 'red')) +
-				xlab(covariate.name) +
-				theme_bw()
-		
-		plot.list[['lfdr']] <- ggplot(data, aes(x = covariate, y = pvals, col = lfdr)) + 
-				geom_point(alpha = 0.75, size = 0.2) +
-				ylab(ylab.pval) +
-				ggtitle('Estimated local FDR') +
-				xlab(covariate.name) +
-				scale_color_gradient(low="red", high="darkgray") +
-				theme_bw()
-	}
-	
-	if (covariate.type == 'categorical') {
-		plot.list[['pi0']] <- ggplot(data, aes(x = covariate, y = pi0, col = rejection)) + 
-				geom_boxplot(alpha = 0.75) +
-				#	geom_smooth(aes(x = covariate, y = pi0), method = 'lm', inherit.aes = FALSE, size = 0.25) +
-				ylab(ylab.pi0) +
-				xlab(covariate.name) +
-				scale_colour_manual(values = c('darkgray', 'red')) +
-				ggtitle('Null probability vs covariate') +
-				theme_bw()
-		
-		plot.list[['k']] <- ggplot(data, aes(x = covariate, y = k, col = rejection)) + 
-				geom_boxplot(alpha = 0.75) +
-				#	geom_smooth(aes(x = covariate, y = k), method = 'lm', inherit.aes = FALSE, size = 0.25) +
-				ylab(ylab.k) +
-				scale_colour_manual(values = c('darkgray', 'red')) +
-				ggtitle('f1 shape parameter vs covariate') +
-				xlab(covariate.name) +
-				theme_bw()
-		
-		
-		plot.list[['pval']] <- ggplot(data, aes(x = covariate, y = pvals, col = rejection)) + 
-				#	geom_boxplot() +
-				geom_jitter(alpha = 0.75, size = 0.2, position=position_jitter(height=0)) +
-				#	geom_area(aes(x = covariate, y = pvals.c), col = 'red', alpha = 0.25, size = 0.25) +
-				ylab(ylab.pval) +
-				ggtitle(paste0('Target FDR level (alpha = ', alpha, ')')) +
-				scale_colour_manual(values = c('darkgray', 'red')) +
-				xlab(covariate.name) +
-				theme_bw()
-		
-		plot.list[['lfdr']] <- ggplot(data, aes(x = covariate, y = pvals, col = lfdr)) + 
-				#	geom_boxplot() +
-				geom_jitter(alpha = 0.75, size = 0.2, position=position_jitter(height=0)) +
-				ylab(ylab.pval) +
-				ggtitle('Estimated local FDR') +
-				xlab(covariate.name) +
-				scale_color_gradient(low="red", high="darkgray") +
-				theme_bw()
-	}
-	cat('Generate combined PDF plot ...\n')
-	pdf(paste0(file.name, '.pdf'), width =10, height = 6)
-	obj <- plot_grid(plot.list[['pi0']], plot.list[['k']], plot.list[['pval']], plot.list[['lfdr']], ncol=2)
-	print(obj)
-	dev.off()
-	
-	cat('Finished!\n')
-	return(invisible(plot.list))
-}
-
-
-
+############################################################################################################
+# Simulation
 Tmat <- function (feature.no = 10000, nb = 100, rho = 0) {
 	# Simulate special correlation structure
 	bs <- feature.no / nb
@@ -992,8 +1398,8 @@ paras.mapping.func <- function (
 #' \item{lfdr}{a vector of oracle LFDR based on the simulated pi0, f1.}
 #' \item{fdr}{a vector of oracle FDR based on LFDR.}
 #' 
-#' @author ***
-#' @references Covariate Adaptive False Discovery Rate Control with Applications to Omics-Wide Multiple Testing.
+#' @author Jun Chen
+#' @references Xianyang Zhang, Jun Chen. Covariate Adaptive False Discovery Rate Control with Applications to Omics-Wide Multiple Testing. JASA. To appear.
 #' @keywords FDR, multiple testing
 #' @importFrom stats rnorm dnorm pnorm arima.sim rbinom
 #' @importFrom cowplot plot_grid
@@ -1001,10 +1407,10 @@ paras.mapping.func <- function (
 #'
 #' data <- simulate.data(feature.no = 10000, covariate.strength = 'Moderate', covariate.model = 'pi0',
 #'		sig.density = 'Medium', sig.strength = 'L3', cor.struct = 'None')
-#' camt.obj <- camt.fdr(pvals = data$pvals, pi0.var = data$pi0.var, f1.var = data$f1.var, 
+#' camt.fdr.obj <- camt.fdr(pvals = data$pvals, pi0.var = data$pi0.var, f1.var = data$f1.var, 
 #'		alg.type = 'EM', control.method = 'knockoff+')
-#' plot.camt(camt.obj, covariate = as.vector(rank(data$pi0.var)), covariate.name = 'Covariate rank',
-#'		log = TRUE, file.name = 'CovariateModerate')
+#' plot.camt.fdr(camt.fdr.obj, covariate = as.vector(rank(data$pi0.var)), covariate.name = 'Covariate rank',
+#'		log = TRUE, file.name = 'CovariateModerate.pdf')
 #' 
 #' @rdname simulate.data
 #' @export
@@ -1124,14 +1530,7 @@ simulate.data <- function (
 	
 	if (sig.dist == 'Normal') {
 		f1.mean <- sig.strengths[sig.strength] * (exp(f1.k * x2) / (1 + exp(f1.k * x2))) * 2
-		
-		# Add signals
-#		if (covariate.model == 'pi0') {
-#			f1.sd <- 1
-#		} else {
-#			f1.sd <- 0.5
-#		}
-		
+				
 		if (null.model == 'Unif') {
 			stats[truth == 1] <- stats[truth == 1] * f1.sd + f1.mean[truth == 1]
 		} else {

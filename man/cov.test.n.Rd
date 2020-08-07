@@ -4,9 +4,15 @@
 \alias{cov.test.n}
 \title{A permutation test for assessing the informativeness of a numeric covariate for CAMT.}
 \usage{
-cov.test.n(pvals, covariate, cutoffs = quantile(pvals, c(0.001, 0.005, 0.01,
-  0.05, 0.1, 0.2)), grps = c(2, 4, 8, 16, 32), perm.no = 999,
-  n.max = 1e+05, silence = TRUE)
+cov.test.n(
+  pvals,
+  covariate,
+  cutoffs = quantile(pvals, c(0.001, 0.005, 0.01, 0.05, 0.1, 0.2)),
+  grps = c(2, 4, 8, 16, 32),
+  perm.no = 999,
+  n.max = 1e+05,
+  silence = TRUE
+)
 }
 \arguments{
 \item{pvals}{a numeric vector of p-values.}
@@ -17,20 +23,18 @@ cov.test.n(pvals, covariate, cutoffs = quantile(pvals, c(0.001, 0.005, 0.01,
 
 \item{grps}{a vector of integer numbers specifying the numbers of breakpoints to divide the range of the covariate.}
 
-\item{perm.no}{the number of permutation to assess the significance. Default is 999.}
+\item{perm.no}{the number of permutation to assess the significance. Deafult is 999.}
 
 \item{n.max}{an integer number specifying the maximum number of data points to be included. If the number of data points is larger than \code{n.max}, 
 subsampling will be performed.}
 
 \item{silence}{a logical value indicating whether to print out the process of the computation.}
-
-
 }
 \value{
 A list with the elements
 \item{stat.o}{the observed test statistic.}
 \item{stat.p}{a vector of the test statistic from permutation.}
-\item{p.value}{the omnibus p-value for testing the association.}
+\item{p.value}{the omnibu p-value for testing the association.}
 \item{x.cut.optim}{the optimal number of breakpoints for cutting the range of the covariate.}
 \item{p.cut.optim}{the optimal cutoff to dichotomize the p-value.}
 }
@@ -47,12 +51,16 @@ data <- simulate.data(feature.no = 1000, covariate.strength = 'Moderate', covari
 obj <- suppressWarnings(cov.test.n(data$pvals, data$pi0.var, perm.no = 2))
 obj$p.value
 
+
 }
 \references{
-Leveraging biological and statistical covariates improves the detection power in epigenome-wide association testing.Submitted.
+Huang JY, ..., Zhang X, Chen J (2020) Leveraging biological and statistical covariates improves the detection power in epigenome-wide
+association testing.21(88).
 }
 \author{
-***
+Jun Chen
 }
-\keyword{association test}
-\keyword{multiple testing}
+\keyword{association}
+\keyword{multiple}
+\keyword{test}
+\keyword{testing,}

@@ -1,12 +1,11 @@
 # CAMT
-Covariate Adaptive Multiple Testing v1.0
+Covariate Adaptive Multiple Testing v1.1
 
 ## Overview
-The CAMT package implements a covariate adaptive multiple testing procedure described in the paper: [Covariate Adaptive False Discovery Rate Control with
-Applications to Omics-Wide Multiple Testing](https://arxiv.org/abs/1909.04811). CAMT allows both the prior null probability and the alternative distribution to depend on covariates. 
+The CAMT package implements two covariate adaptive multiple testing procedures (FDR and FWER) described in [Covariate Adaptive False Discovery Rate Control with
+Applications to Omics-Wide Multiple Testing](https://arxiv.org/abs/1909.04811) and [ Covariate Adaptive Family-wise Error Control with Applications to Genome-wide Association Studies]. CAMT allows  the prior null probability and/or the alternative distribution to depend on covariates. 
 It is robust to model mis-specification and is computationally efficient. The package also contains functions for testing the
-informativeness of the covariates for multiple testing correction, and a comprehensive simulation function, which covers all the
-settings in the paper.
+informativeness of the covariates for multiple testing correction, and a comprehensive simulation function, which covers a wide range of settings.
 
 ## Installation         
 
@@ -32,14 +31,17 @@ data <- simulate.data(feature.no = 5000, covariate.strength = "Moderate", covari
 	sig.density = "Medium", sig.strength = "L3", cor.struct = "None")
   
 # Run CAMT  
-camt.obj <- camt.fdr(pvals = data$pvals, pi0.var = data$pi0.var, f1.var = data$f1.var, 
+camt.obj.fdr <- camt.fdr(pvals = data$pvals, pi0.var = data$pi0.var, f1.var = data$f1.var, 
 	alg.type = "EM", control.method = "knockoff+")
   
 # Plot results (logit(pi0) vs covariate, logit(k) vs covariate)
-plot.camt(camt.obj, covariate = as.vector(rank(data$pi0.var)), covariate.name = "Covariate rank",
-	log = TRUE, file.name = "CovariateModerate")
+plot.camt.fdr(camt.obj.fdr, covariate = as.vector(rank(data$pi0.var)), covariate.name = "Covariate rank",
+	log = TRUE, file.name = "CovariateModerateFDR.pdf")
+
+camt.obj.fwer <- camt.fwer(pvals = data$pvals, pi0.var = data$pi0.var)
+plot.camt.fwer(camt.obj.fwer, covariate = as.vector(rank(data$pi0.var)), covariate.name = 'Covariate rank',
+    log = TRUE, file.name = 'CovariateModerateFWER.pdf')	
   
 ```
 
-## Reproducibility
-The three folders "Simulation", "RealData" and "Runtime" contain data and scripts for reproducing the results in the manscript. In the "Simulation" folder, a word document describing various simulation scripts is provided.
+
