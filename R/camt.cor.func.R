@@ -690,7 +690,7 @@ plot.camt.fdr <- function (camt.fdr.obj,  covariate, covariate.type = c('continu
 				theme_bw()
 	}
 	cat('Generate combined PDF plot ...\n')
-	pdf(paste0(file.name, '.pdf'), width =10, height = 6)
+	pdf(paste0(file.name), width =10, height = 6)
 	obj <- plot_grid(plot.list[['pi0']], plot.list[['k']], plot.list[['pval']], plot.list[['lfdr']], ncol=2)
 	print(obj)
 	dev.off()
