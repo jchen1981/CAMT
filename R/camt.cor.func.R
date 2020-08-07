@@ -617,7 +617,7 @@ plot.camt.fdr <- function (camt.fdr.obj,  covariate, covariate.type = c('continu
 				scale_colour_manual(values = c('darkgray', 'red')) +
 				ggtitle('Null probability vs covariate') +
 				theme_bw() +
-				theme(legend.title = element_blank())
+				theme(legend.position = "none")
 		
 		plot.list[['k']] <- ggplot(data, aes(x = covariate, y = k, col = rejection)) + 
 				geom_point(alpha = 0.75, size = 0.25) +
@@ -637,7 +637,7 @@ plot.camt.fdr <- function (camt.fdr.obj,  covariate, covariate.type = c('continu
 				scale_colour_manual(values = c('darkgray', 'red')) +
 				xlab(covariate.name) +
 				theme_bw() +
-				theme(legend.title = element_blank())
+				theme(legend.position = "none")
 		
 		plot.list[['lfdr']] <- ggplot(data, aes(x = covariate, y = pvals, col = lfdr)) + 
 				geom_point(alpha = 0.75, size = 0.2) +
@@ -657,7 +657,7 @@ plot.camt.fdr <- function (camt.fdr.obj,  covariate, covariate.type = c('continu
 				scale_colour_manual(values = c('darkgray', 'red')) +
 				ggtitle('Null probability vs covariate') +
 				theme_bw() +
-				theme(legend.title = element_blank())
+				theme(legend.position = "none")
 		
 		plot.list[['k']] <- ggplot(data, aes(x = covariate, y = k, col = rejection)) + 
 				geom_boxplot(alpha = 0.75) +
@@ -678,7 +678,7 @@ plot.camt.fdr <- function (camt.fdr.obj,  covariate, covariate.type = c('continu
 				scale_colour_manual(values = c('darkgray', 'red')) +
 				xlab(covariate.name) +
 				theme_bw() +
-				theme(legend.title = element_blank())
+				theme(legend.position = "none")
 		
 		plot.list[['lfdr']] <- ggplot(data, aes(x = covariate, y = pvals, col = lfdr)) + 
 				#	geom_boxplot() +
@@ -1068,7 +1068,7 @@ plot.camt.fwer <- function(camt.fwer.obj, covariate, covariate.type = c('continu
 				scale_colour_manual(values = c('darkgray', 'red')) +
 				ggtitle('Null probability vs covariate') +
 				theme_bw() +
-				theme(legend.title = element_blank())
+				theme(legend.position = "none")
 		
 		plot.list[['pval']] <- ggplot(data, aes(x = pi0.var, y = pvals, col = rejection)) + 
 				geom_point(alpha = 0.75, size = 0.2) +
@@ -1085,7 +1085,7 @@ plot.camt.fwer <- function(camt.fwer.obj, covariate, covariate.type = c('continu
 				scale_colour_manual(values = c('darkgray', 'red')) +
 				ggtitle('Null probability vs covariate') +
 				theme_bw() +
-				theme(legend.title = element_blank())
+				theme(legend.position = "none")
 		
 		plot.list[['pval']] <- ggplot(data, aes(x = pi0.var, y = pvals, col = rejection)) + 
 				geom_jitter(alpha = 0.75, size = 0.2, position = position_jitter(height = 0)) +
