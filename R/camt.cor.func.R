@@ -1,11 +1,11 @@
 
 
-process.pvals <- function (pvals) {
+process.pvals <- function (pvals, pvals.cutoff = 1e-15) {
 	# Process the pvalues to replace 0 or 1
 	# Right end 
 	pvals[pvals == 1] <- seq(max(pvals[pvals != 1]), 1, len=sum(pvals == 1) + 2)[2 : (sum(pvals == 1) + 1)]
 	# Left end
-	pvals[pvals == 0]  <- min(pvals[pvals != 0])
+	pvals[pvals == 0]  <- pvals.cutoff
 	return(pvals)
 }
 
@@ -70,11 +70,7 @@ calculate.weights <- function (pvals, pi0.var = NULL, f1.var = NULL, data = NULL
 #			 pi0.var, f1.var: the actual model matrix used if its return is requested.
 	alg.type <- match.arg(alg.type)
 	
-	m0 <- length(pvals)
-	nan.ind <- !is.na(pvals)
-	pvals <- pvals[nan.ind]
-	
-	m <- length(pvals)
+	m0 <- m <- length(pvals)
 	
 	if (is.null(EM.paras$pi0.init)) {
 		if (trace) cat('Estimating initial pi0 values ...\n')
@@ -160,7 +156,6 @@ calculate.weights <- function (pvals, pi0.var = NULL, f1.var = NULL, data = NULL
 			}
 		}
 		
-		pi0.var <- pi0.var[nan.ind, , drop = FALSE]
 	}
 	
 	
@@ -206,7 +201,6 @@ calculate.weights <- function (pvals, pi0.var = NULL, f1.var = NULL, data = NULL
 			}
 		}
 		
-		f1.var <- f1.var[nan.ind, , drop = FALSE]
 	}
 	
 	
@@ -300,9 +294,6 @@ calculate.weights <- function (pvals, pi0.var = NULL, f1.var = NULL, data = NULL
 		if (trace) cat('\n')
 	}
 	
-	temp <- rep(NA, m)
-	temp[nan.ind] <- pi0
-	pi0 <- temp
 	
 	result <- list(call = match.call(),  pi0 = pi0,  k = k, pi0.coef = theta1, k.coef = beta1, 
 			EM.paras = EM.paras,  loglik = loglik1, pvals = pvals)
@@ -460,6 +451,7 @@ camt.fdr <- function (pvals, pi0.var = NULL, f1.var = NULL, data = NULL,
 		control.method = c('hybrid', 'knockoff+'), burnin.no = 500,
 		trace = FALSE, return.model.matrix = TRUE, ...) {
 	
+	if (sum(is.na(pvals)) > 0)  stop("The pvalues contain NA! Please remove!\n")
 
 	control.method <- match.arg(control.method)
 	alg.type <- match.arg(alg.type)
@@ -806,13 +798,11 @@ camt.fwer <- function(pvals, pi0.var, data = data, pvals.cutoff = 1e-15, alpha =
 				pi0.init = NULL, nlm.iter = 5), trace = FALSE, return.model.matrix = FALSE) {
 	
 	m0 <- length(pvals)
-	nan.ind <- !is.na(pvals)
-	pvals <- pvals[nan.ind]
-	m <- length(pvals)
+
+	if (sum(is.na(pvals)) > 0) stop("The pvalues contain NA! Please remove!\n")
 	
-	pvals[pvals == 1] <- seq(max(pvals[pvals != 1]), 1, 
-			length.out = sum(pvals == 1) + 2)[2 : (sum(pvals == 1) + 1)]
-	pvals[pvals == 0] <- min(pvals[pvals != 0])
+	m <- m0 <- length(pvals)
+	
 	qvals <- qvalue(pvals, pi0.method = "bootstrap")
 	gamma <- qvals$lambda[which.min(abs(qvals$pi0.lambda - qvals$pi0))]
 	Y <- (pvals > gamma)
@@ -899,8 +889,7 @@ camt.fwer <- function(pvals, pi0.var, data = data, pvals.cutoff = 1e-15, alpha =
 				}
 			}
 		}
-		
-		pi0.var <- pi0.var[nan.ind, , drop = FALSE]
+
 	}
 	
 	# Threshold the p-value for more robustness
@@ -961,10 +950,7 @@ camt.fwer <- function(pvals, pi0.var, data = data, pvals.cutoff = 1e-15, alpha =
 	
 	if (iter == iterlim) warning('Maximum number of iterations reached!')
 	
-	temp <- rep(NA, m)
-	temp[nan.ind] <- pi0
-	pi0 <- temp
-	
+
 	camt.fwer.obj <- list(call = match.call(), pvals = pvals, pi0.var = pi0.var, alpha = alpha,
 			pi0 = pi0, k = k, pi0.coef = theta, gamma = gamma,
 			loglik = loglik2, EM.paras = EM.paras, EM.iter = iter) 
