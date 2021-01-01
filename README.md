@@ -3,9 +3,9 @@ Covariate Adaptive Multiple Testing v1.1
 
 ## Overview
 The CAMT package implements two covariate adaptive multiple testing procedures (FDR and FWER) described in [Covariate Adaptive False Discovery Rate Control with
-Applications to Omics-Wide Multiple Testing](https://arxiv.org/abs/1909.04811) and [ Covariate Adaptive Family-wise Error Control with Applications to Genome-wide Association Studies]. CAMT allows  the prior null probability and/or the alternative distribution to depend on covariates. 
+Applications to Omics-Wide Multiple Testing](https://arxiv.org/abs/1909.04811) and [Covariate Adaptive Family-wise Error Control with Applications to Genome-wide Association Studies](https://arxiv.org/abs/2011.01107). CAMT allows  the prior null probability and/or the alternative distribution to depend on covariates. 
 It is robust to model mis-specification and is computationally efficient. The package also contains functions for testing the
-informativeness of the covariates for multiple testing correction, and a comprehensive simulation function, which covers a wide range of settings.
+informativeness of the covariates for multiple testing, and a comprehensive simulation function, which covers a wide range of settings.
 
 ## Installation         
 
